@@ -1,0 +1,147 @@
+# Exp-004c — Weight-Cap Variation: W = 4.0 (Active Run)
+#
+# Batch 04 Tier 1 — direct test of the analytically derived authority fixed point.
+#
+# This experiment: W = 4.0 (weight cap reduced from 5.0 to 4.0).
+#
+# Analytical predictions (derived in LN-003):
+#   Gini_start  = 297/10300 ≈ 0.028835   (after tick 0: 1 node at W=4.0, 99 at 1.0)
+#   Gini_end    = 147/2650  ≈ 0.055472   (equilibrium: 2 nodes at W=4.0, 98 at 1.0)
+#
+#   Derivation:
+#     sum = 98·1.0 + 2·4.0 = 106
+#     weighted_sum = (98·99/2) + 99·4.0 + 100·4.0 = 4851 + 199·4 = 5647
+#     G = 2·5647/(100·106) − 101/100 = 11294/10600 − 101/100 = 588/10600 = 147/2650
+#
+#   Wins to reach cap: (4.0−1.0)/0.05 = 60 wins.
+#
+# See exp_004a_W2_active.yaml header for full context and required engine change.
+
+experiment:
+  id: exp_004c_W4_active
+  seed: 42
+  description: >
+    Batch 04 Tier 1 — weight cap W = 4.0. Tests whether Gini_end tracks the
+    analytical formula Gini(N=100, k=2, W=4.0, w₀=1.0) = 147/2650 ≈ 0.055472.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+primitives:
+  boundary: true
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+  authority: true
+  mediation:
+    enabled: true
+    mode: structured
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+  reversibility: true
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0.005
+  min_ticks_before_archive: 100
+  stability_window_fraction: 0.025
+  weight_cap: 4.0
+
+events: []
+
+hypotheses:
+  - id: H11c_W4_gini_start
+    description: >
+      Gini_start = 297/10300 ≈ 0.028835 after tick 0.
+      One node wins all 100 claims and reaches W=4.0 cap after 60 wins.
+      Distribution: [4.0 × 1, 1.0 × 99].
+    metric: authority_concentration_gini_start
+    predicted_value: 0.028835
+    predicted_exact: "297/10300"
+    window: [0, 0]
+
+  - id: H11c_W4_gini_end
+    description: >
+      Gini_end = 147/2650 ≈ 0.055472 at equilibrium.
+      Two dominant nodes at W=4.0; 98 nodes at w₀=1.0.
+      Primary falsification condition for H11 at W=4.0.
+    metric: authority_concentration_gini
+    predicted_value: 0.055472
+    predicted_exact: "147/2650"
+    window: [3000, 5000]

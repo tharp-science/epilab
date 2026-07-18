@@ -1,0 +1,158 @@
+# Exp-006d — Overlap Intensity Midpoint (Boundary Sweep)
+#
+# Purpose:
+#   First run of overlap-intensity mapping between exp_006c (partial overlap)
+#   and exp_006b (full overlap).
+#
+# Design:
+#   - Keep peripheral overlap from exp_006c (signal+temporal, high reversion tolerance)
+#   - Make half of founding + fast_mover reversion-eligible (high tolerance)
+#   - Keep symmetric cap W=5.0
+
+experiment:
+  id: exp_006d_overlap_mid
+  seed: 2
+  description: >
+    Batch 06d boundary sweep point. Intermediate overlap intensity between
+    exp_006c and exp_006b by partially enabling founding/fast_mover access
+    to reversion channel while keeping peripheral overlap active.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 4
+    id_prefix: "fnl_"
+    # low-tolerance founders
+
+  - persona: founding_node
+    count: 4
+    id_prefix: "fnh_"
+    reversibility_tolerance: 0.65
+    # high-tolerance founders
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+    authority_types: ["signal", "temporal"]
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 4
+    id_prefix: "fml_"
+    # low-tolerance fast movers
+
+  - persona: fast_mover
+    count: 4
+    id_prefix: "fmh_"
+    reversibility_tolerance: 0.65
+    # high-tolerance fast movers
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+primitives:
+  boundary: true
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+  authority: true
+  mediation:
+    enabled: true
+    mode: structured
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+  reversibility: true
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0.005
+  min_ticks_before_archive: 100
+  stability_window_fraction: 0.025
+  weight_cap: 5.0
+
+events: []
+
+hypotheses:
+  - id: H16a_mid_overlap_merge
+    description: >
+      If midpoint overlap intensity is already above collapse threshold,
+      endpoint should move to k=1-like region.
+    metric: authority_concentration_gini
+    predicted_direction: "<= 0.05"
+    window: [3000, 5000]
+
+  - id: H16b_mid_overlap_split
+    description: >
+      If midpoint overlap intensity is below collapse threshold,
+      endpoint remains k=2-like.
+    metric: authority_concentration_gini
+    predicted_direction: ">= 0.07"
+    window: [3000, 5000]
+
+  - id: H16c_reversion_channel_active
+    description: >
+      Reversion remains active in midpoint-overlap regime.
+    metric: total_reversions
+    predicted_direction: "> 0"
+    window: [0, 5000]

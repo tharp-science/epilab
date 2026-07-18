@@ -1,0 +1,123 @@
+# Exp-004 — Shared Null Baseline for Batch 04 W-Variation Experiments
+#
+# REUSE NOTE:
+#   This config is structurally identical to exp_003b_null (8% founding composition,
+#   all primitives off). The null run produces Gini = 0.0 regardless of weight_cap
+#   (authority primitive is disabled — accumulation never fires). A new null run is
+#   not strictly required for Batch 04 W-variation. Reuse exp_003b_null results at
+#   seeds 42, 123, 7 as the shared baseline for exp_004a/b/c.
+#
+#   This file exists as documentation of the Batch 04 null condition and as the
+#   config to run if a fresh null baseline is needed (e.g., if engine changes
+#   affect null dynamics).
+#
+# Primary purpose in Batch 04:
+#   Not the primary comparison target. Batch 04 W-variation tests are evaluated
+#   against analytical predictions, not null deltas. The null is retained for
+#   consistency with prior batch methodology and for computing Gini_delta if
+#   required for cross-batch comparison.
+
+experiment:
+  id: exp_004_null
+  seed: 42
+  description: >
+    Batch 04 null baseline. 100 nodes, 8% founding composition, k=6 small-world,
+    all primitives disabled. Shared across exp_004a/b/c W-variation conditions.
+    Structurally identical to exp_003b_null.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+primitives:
+  boundary: false
+  lineage:
+    enabled: false
+  authority: false
+  mediation:
+    enabled: false
+  confidence:
+    enabled: false
+  reversibility: false
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0
+  min_ticks_before_archive: 0
+  stability_window_fraction: 0.025
+
+events: []
+hypotheses: []

@@ -1,0 +1,6 @@
+mesa>=3.0
+numpy>=1.26
+pyyaml>=6.0
+matplotlib>=3.8
+pytest>=8.0
+networkx>=3.0

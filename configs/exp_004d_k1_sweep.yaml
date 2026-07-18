@@ -1,0 +1,172 @@
+# Exp-004d — Seed Sweep: k=1 Dominant-Node Case
+#
+# Batch 04 Tier 2 — tests the conditional structure of the fixed-point derivation.
+#
+# Background (LN-003):
+#   The fixed-point formula produces different Gini values depending on whether
+#   the first signal-eligible node in the initial shuffle (S*) holds control or
+#   temporal authority:
+#
+#   Case k=2 (S* is pn or sp — no control/temporal):
+#     Two dominant nodes emerge. Gini_end = 49/675 ≈ 0.0726.
+#     Observed in all 15 runs at seeds 42, 123, 7.
+#
+#   Case k=1 (S* is fn or fm — has temporal, can win C-group transitions too):
+#     One dominant node wins everything. Gini_end = Gini_start = 99/2600 ≈ 0.0381.
+#     Predicted but not yet observed. Probability per seed ≈ 20%
+#     (16 fn+fm nodes out of 80 signal-eligible: fn=8 have all 4 types,
+#     fm=8 have signal+temporal which satisfies C-group via `any()` match).
+#
+# Purpose of this experiment:
+#   Find a seed that produces k=1 and confirm:
+#   1. Gini_end = Gini_start (Gini never grows from its tick-0 value)
+#   2. Gini_end = 99/2600 ≈ 0.038077  (the k=1 formula)
+#
+# How to find a k=1 seed:
+#   Run the utility script tools/find_k1_seed.py (see that file for usage).
+#   It simulates the tick-0 shuffle for each seed and checks whether the first
+#   signal-eligible node is fn or fm. Expects to find a k=1 seed within
+#   ~5–10 trials given the 20% prior.
+#
+#   Alternatively: run this config at seed 0, 1, 2, ... and inspect Gini_end.
+#   A k=1 run produces Gini_end ≈ Gini_start. A k=2 run produces Gini_end ≈ 0.073.
+#
+# Placeholder seed:
+#   Set seed: [TBD — insert seed identified by k=1 sweep].
+#   The config below uses seed: 0 as a starting point; replace if it produces k=2.
+
+experiment:
+  id: exp_004d_k1_sweep
+  seed: 2                     # k=1 confirmed by tools/find_k1_seed.py: S* = founding_node
+  # Replicates (also k=1): seed 8 (S*=founding_node), seed 16 (S*=fast_mover)
+  description: >
+    Batch 04 Tier 2 — seed sweep to find k=1 dominant-node case.
+    Identical composition and W=5.0 to Batch 02/03 reference runs.
+    Tests whether seeds where S* is a founding_node or fast_mover produce
+    Gini_end = Gini_start = 99/2600 ≈ 0.038077.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+primitives:
+  boundary: true
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+  authority: true
+  mediation:
+    enabled: true
+    mode: structured
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+  reversibility: true
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0.005
+  min_ticks_before_archive: 100
+  stability_window_fraction: 0.025
+  weight_cap: 5.0             # Same as Batch 02/03 reference — W is not the variable here
+
+events: []
+
+hypotheses:
+  - id: H11d_k1_gini_flat
+    description: >
+      In a k=1 run (S* is fn or fm), Gini_end = Gini_start.
+      The Gini does not grow after tick 0 because the single dominant node
+      wins all transition types and no second node ever accumulates weight.
+    metric: gini_delta_start_to_end
+    predicted_direction: "≈ 0.0"
+    window: [0, 5000]
+
+  - id: H11d_k1_gini_end
+    description: >
+      Gini_end = 99/2600 ≈ 0.038077 in the k=1 case.
+      This is the same value as Gini_start in k=2 runs, but here it is also
+      the equilibrium — it neither rises nor falls after tick 0.
+      Derivation: G(N=100, k=1, W=5.0, w₀=1.0) = 99/2600.
+    metric: authority_concentration_gini
+    predicted_value: 0.038077
+    predicted_exact: "99/2600"
+    window: [3000, 5000]
+    note: >
+      If Gini_end ≈ 0.073 instead: this seed produced k=2 case, not k=1.
+      Discard and try a different seed. Use tools/find_k1_seed.py to identify
+      a confirmed k=1 seed before running the full 5000-tick simulation.

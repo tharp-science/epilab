@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this laboratory, please cite the companion preprint."
+title: "epilab"
+type: software
+authors:
+  - family-names: Bohle
+    given-names: Sebastian
+repository-code: "https://github.com/sebb001/epilab"
+license: MIT
+preferred-citation:
+  type: article
+  title: "Governing Epistemic Systems: Primitive Interaction and the Structural Dynamics of Distributed Authority"
+  authors:
+    - family-names: Bohle
+      given-names: Sebastian
+  year: 2026
+  journal: "SSRN working paper"
+  url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6417898"

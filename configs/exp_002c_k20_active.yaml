@@ -1,0 +1,178 @@
+# Exp-002c — k=20 Active Run
+#
+# Part of the k-variation batch testing the interaction-density hypothesis (H7).
+# Identical to exp_002_active.yaml in every parameter except k.
+#
+# k-variation series at N=100 (Gini deltas are the interpretable signal):
+#   k=6  (k/N=0.06) — Exp-002    — delta = 0.073 (seed 42, B1/B3-fixed)
+#   k=12 (k/N=0.12) — Exp-002b   — delta = TBD
+#   k=20 (k/N=0.20) — Exp-002c   — delta = TBD (this config)
+#
+# H7 prediction: Gini deltas rise monotonically with k/N.
+# Falsification: if delta at k=20 ≤ delta at k=12, H7 is falsified or
+# the relationship is non-monotonic (saturation, threshold, or confound).
+#
+# PREREQUISITE: exp_002c_k20_null.yaml must be run at all three seeds first.
+# Seeds: 42 (primary), 123, 7
+#
+# Engine requirements:
+#   [B1] Cycling at Step 0 (pre-governance)
+#   [B5] stability_window_fraction: 0.025 satisfies co-design constraint
+
+experiment:
+  id: exp_002c_k20_active
+  seed: 42                    # replace with 123 and 7 for multi-seed runs
+  description: >
+    k=20 active run for interaction-density hypothesis test.
+    100 nodes, 100 claims, small-world k=20, full primitive set, static trust.
+    k/N = 0.20. If H7 holds, Gini delta should exceed k=12 result.
+    This is the highest-density point in the k-variation batch.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 20           # CHANGED from k=6 — the only structural difference from exp_002_active
+  p: 0.1
+
+primitives:
+  boundary: true
+
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+
+  authority: true
+
+  mediation:
+    enabled: true
+    mode: structured
+
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+
+  reversibility: true
+
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0.005
+
+  min_ticks_before_archive: 100
+
+  stability_window_fraction: 0.025
+  # N = 125 ticks < cycle period 200 ticks. B5 satisfied.
+
+events: []
+
+hypotheses:
+  - id: H1
+    description: >
+      Gini delta (active minus null, k=20) exceeds the k=12 result.
+      Primary test of H7: authority gravity scales monotonically with k/N.
+    metric: authority_concentration_gini
+    predicted_direction: increasing
+    window: [3000, 5000]
+    note: >
+      Manual computation: delta = active_gini[k=20] − null_gini[k=20].
+      Compare to k=6 (0.073) and k=12 (TBD). Monotonic rise confirms H7.
+      Non-monotonic result (e.g. delta[k=20] < delta[k=12]) falsifies H7 as stated
+      and opens a saturation or threshold hypothesis.
+
+  - id: H2
+    description: >
+      Gini is still rising in the final 1000 ticks at k=20.
+      Higher connectivity may delay saturation compared to k=6.
+    metric: authority_concentration_gini
+    predicted_direction: increasing
+    window: [4000, 5000]
+
+  - id: H3
+    description: >
+      Drift rate at k=20 is at least as high as k=6 (0.497).
+      More connections mean more reversal opportunities;
+      epistemic contention is not expected to decrease with k.
+    metric: interpretive_drift_rate
+    predicted_direction: increasing
+    window: [1000, 5000]
+    note: "Exploratory — epistemic dynamics are not the primary test variable."
+
+  - id: H4
+    description: "Cycling sustains live system: b3_absorbing_state_artefact remains false"
+    metric: b3_absorbing_state_artefact
+    predicted_direction: flat
+    threshold_max: 0
+    window: [0, 5000]
+    note: "Diagnostic check. If true, run is invalid — do not record as evidence."

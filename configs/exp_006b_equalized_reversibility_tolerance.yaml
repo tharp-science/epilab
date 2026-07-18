@@ -1,0 +1,154 @@
+# Exp-006b — Equalized Reversibility Tolerance Test
+#
+# Purpose:
+#   Test whether persona-driven reversibility filtering is necessary for
+#   persistent channel split. Keep reversibility ON, but raise founding and
+#   fast_mover tolerance above the reversion threshold.
+#
+# Design:
+#   - reversibility remains ON (both channels present)
+#   - founding_node and fast_mover: reversibility_tolerance set to 0.65
+#     (above threshold 0.3)
+#
+# Branch predictions:
+#   - Merge branch: endpoint moves toward k=1 region (<= 0.05)
+#   - Split branch: endpoint remains k=2-like (>= 0.07)
+#
+# Interpretation rule:
+#   These branch hypotheses are intentionally competing. Exactly one branch is
+#   expected to be supported if the endpoint is decisive.
+
+experiment:
+  id: exp_006b_equalized_reversibility_tolerance
+  seed: 2
+  description: >
+    Batch 06 falsification test B. Keep both channels active, but remove
+    founding/fast_mover exclusion from reversion proposals by equalizing
+    reversibility_tolerance above gate threshold.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+    reversibility_tolerance: 0.65
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+    reversibility_tolerance: 0.65
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+primitives:
+  boundary: true
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+  authority: true
+  mediation:
+    enabled: true
+    mode: structured
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+  reversibility: true
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0.005
+  min_ticks_before_archive: 100
+  stability_window_fraction: 0.025
+  weight_cap: 5.0
+
+events: []
+
+hypotheses:
+  - id: H14a_merge_branch
+    description: >
+      If equalizing reversibility tolerance collapses channel ownership,
+      endpoint should move toward k=1 region.
+    metric: authority_concentration_gini
+    predicted_direction: "<= 0.05"
+    window: [3000, 5000]
+
+  - id: H14b_split_branch
+    description: >
+      If channel split persists despite equalized tolerance,
+      endpoint should remain in k=2-like region.
+    metric: authority_concentration_gini
+    predicted_direction: ">= 0.07"
+    window: [3000, 5000]
+
+  - id: H14c_reversion_channel_active
+    description: >
+      Reversion pathway remains active in this condition.
+    metric: total_reversions
+    predicted_direction: "> 0"
+    window: [0, 5000]

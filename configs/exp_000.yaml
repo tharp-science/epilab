@@ -1,0 +1,110 @@
+# B2-WARNING: epistemic_accuracy is NOT a valid primary metric for this experiment.
+# Claim set is 6/10 true (majority true, near-uniform difficulty 0.3–0.7).
+# Accuracy converges to base rate (~0.6) regardless of governance.
+# Use this config only for authority/stability metrics. See fault B2.
+
+experiment:
+  id: exp_000
+  seed: 42
+  description: "Null governance baseline — all primitives disabled"
+  ticks: 500
+  record_interval: 10
+
+nodes:
+  - id: node_founding_1
+    persona: founding_node
+  - id: node_founding_2
+    persona: founding_node
+  - id: node_peripheral_1
+    persona: peripheral_node
+  - id: node_peripheral_2
+    persona: peripheral_node
+  - id: node_peripheral_3
+    persona: peripheral_node
+  - id: node_mediating_1
+    persona: mediating_node
+  - id: node_mediating_2
+    persona: mediating_node
+
+claims:
+  - id: claim_001
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.4
+    ambiguity: 0.3
+  - id: claim_002
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_003
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.6
+    ambiguity: 0.4
+  - id: claim_004
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.3
+    ambiguity: 0.6
+  - id: claim_005
+    initial_state: unknown
+    ground_truth: null
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_006
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.7
+    ambiguity: 0.3
+  - id: claim_007
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.4
+    ambiguity: 0.7
+  - id: claim_008
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.4
+  - id: claim_009
+    initial_state: unknown
+    ground_truth: null
+    difficulty: 0.6
+    ambiguity: 0.6
+  - id: claim_010
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.4
+    ambiguity: 0.5
+
+network:
+  topology: small_world
+  k: 4
+  p: 0.1
+
+primitives:
+  boundary: false
+  lineage: false
+  authority: false
+  mediation: false
+  confidence: false
+  reversibility: false
+  observation: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+hypotheses:
+  - id: H1
+    description: "Without primitives, system produces chaos (low stability)"
+    metric: epistemic_stability_index
+    predicted_direction: low
+    window: [0, 500]
+  - id: H2
+    description: "Without authority primitive, Gini stays near initial value"
+    metric: authority_concentration_gini
+    predicted_direction: flat
+    window: [0, 500]

@@ -1,0 +1,151 @@
+# Exp-004b — Weight-Cap Variation: W = 3.0 (Active Run)
+#
+# Batch 04 Tier 1 — direct test of the analytically derived authority fixed point.
+#
+# This experiment: W = 3.0 (weight cap reduced from 5.0 to 3.0).
+#
+# Analytical predictions (derived in LN-003):
+#   Gini_start  = 33/1700  ≈ 0.019412   (after tick 0: 1 node at W=3.0, 99 at 1.0)
+#   Gini_end    = 49/1300  ≈ 0.037692   (equilibrium: 2 nodes at W=3.0, 98 at 1.0)
+#
+#   Derivation:
+#     sum = 98·1.0 + 2·3.0 = 104
+#     weighted_sum = (98·99/2) + 99·3.0 + 100·3.0 = 4851 + 199·3 = 5448
+#     G = 2·5448/(100·104) − 101/100 = 10896/10400 − 101/100 = 392/10400 = 49/1300
+#
+#   Wins to reach cap: (3.0−1.0)/0.05 = 40 wins.
+#
+# Note: Gini_end(W=3.0) = 49/1300 ≈ 0.03769, which is close to Gini_start(W=5.0)
+# = 99/2600 ≈ 0.03808. These are numerically similar but analytically distinct;
+# do not conflate them.
+#
+# See exp_004a_W2_active.yaml header for full context and required engine change.
+
+experiment:
+  id: exp_004b_W3_active
+  seed: 42
+  description: >
+    Batch 04 Tier 1 — weight cap W = 3.0. Tests whether Gini_end tracks the
+    analytical formula Gini(N=100, k=2, W=3.0, w₀=1.0) = 49/1300 ≈ 0.037692.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+primitives:
+  boundary: true
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+  authority: true
+  mediation:
+    enabled: true
+    mode: structured
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+  reversibility: true
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0.005
+  min_ticks_before_archive: 100
+  stability_window_fraction: 0.025
+  weight_cap: 3.0
+
+events: []
+
+hypotheses:
+  - id: H11b_W3_gini_start
+    description: >
+      Gini_start = 33/1700 ≈ 0.019412 after tick 0.
+      One node wins all 100 claims and reaches W=3.0 cap after 40 wins.
+      Distribution: [3.0 × 1, 1.0 × 99].
+    metric: authority_concentration_gini_start
+    predicted_value: 0.019412
+    predicted_exact: "33/1700"
+    window: [0, 0]
+
+  - id: H11b_W3_gini_end
+    description: >
+      Gini_end = 49/1300 ≈ 0.037692 at equilibrium.
+      Two dominant nodes at W=3.0; 98 nodes at w₀=1.0.
+      Primary falsification condition for H11 at W=3.0.
+    metric: authority_concentration_gini
+    predicted_value: 0.037692
+    predicted_exact: "49/1300"
+    window: [3000, 5000]

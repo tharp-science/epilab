@@ -1,0 +1,132 @@
+# Exp-003c — Founding Proportion Variation: Null Baseline (16 founding / 100)
+#
+# Primary question (Batch 03 Tier 1):
+#   Does increasing founding proportion to 16% raise the authority equilibrium
+#   above the Batch 02 fixed point (Gini delta ≈ 0.073)?
+#
+# Founding proportion: 16 / 100 = 16%
+#   Peripheral nodes reduced by 8 to hold total at 100.
+#   All other node types held constant to isolate the founding variable.
+#
+# PREREQUISITE: run before exp_003c_active at all three seeds.
+#
+# Multi-seed protocol:
+#   Seed 42  — primary
+#   Seed 123 — replicate
+#   Seed 7   — replicate
+
+experiment:
+  id: exp_003c_null
+  seed: 42                    # replace with 123 and 7 for multi-seed runs
+  description: >
+    Batch 03 Tier 1 null baseline. 100 nodes, 16 founding / 84 other,
+    k=6 small-world, all primitives disabled. Establishes scale-matched null Gini
+    for the increased founding proportion condition. Paired with exp_003c_active.
+  ticks: 5000
+  record_interval: 50
+
+# --- Node groups ---
+# Founding count: 16 (doubled from 8 in Batch 02 control)
+# Peripheral count: 44 (reduced by 8 to compensate)
+# Mediating, skeptical, fast_mover: unchanged — not the variable under test.
+
+node_groups:
+  - persona: founding_node
+    count: 16
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 44
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+# --- Claim groups ---
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+# --- Network ---
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+# --- Primitives: all disabled ---
+primitives:
+  boundary: false
+  lineage:
+    enabled: false
+  authority: false
+  mediation:
+    enabled: false
+  confidence:
+    enabled: false
+  reversibility: false
+  observation:
+    enabled: false
+
+# --- Trust network: static ---
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+# --- Dynamics: no cycling in null ---
+dynamics:
+  revisability_rate: 0
+  min_ticks_before_archive: 0
+  stability_window_fraction: 0.025
+
+events: []
+
+hypotheses: []

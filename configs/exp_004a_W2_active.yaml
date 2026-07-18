@@ -1,0 +1,201 @@
+# Exp-004a — Weight-Cap Variation: W = 2.0 (Active Run)
+#
+# Batch 04 Tier 1 — direct test of the analytically derived authority fixed point.
+#
+# Primary question:
+#   Does the observed Gini_end track the formula Gini(N=100, k=2, W, w₀=1.0) as W varies?
+#
+# This experiment: W = 2.0 (weight cap reduced from 5.0 to 2.0).
+#
+# Analytical predictions (derived in LN-003, formula below):
+#   Gini_start  = 99/10100 ≈ 0.009802   (after tick 0: 1 node at W=2.0, 99 at 1.0)
+#   Gini_end    = 49/2550  ≈ 0.019216   (equilibrium: 2 nodes at W=2.0, 98 at 1.0)
+#
+#   Derivation:
+#     sum = 98·1.0 + 2·2.0 = 102
+#     weighted_sum = (98·99/2) + 99·2.0 + 100·2.0 = 4851 + 199·2 = 5249
+#     G = 2·5249/(100·102) − 101/100 = 10498/10200 − 101/100 = 98/10200 = 49/2550
+#
+#   Wins to reach cap from w₀=1.0: (2.0−1.0)/0.05 = 20 wins.
+#   Convergence is fast — dominant nodes are established within ~1–2 ticks.
+#
+# Falsification condition:
+#   If Gini_end ≠ 49/2550 (to the precision of the scorecard):  formula is wrong.
+#   If Gini_end = 49/2550:  formula confirmed at W=2.0.
+#   Both Gini_start AND Gini_end are checked — the derivation implies both.
+#
+# Required engine change (one line):
+#   In engine/model.py Step 9, replace:
+#     node.authority_weight = min(5.0, node.authority_weight + 0.05)
+#   with:
+#     weight_cap = self.config.get("dynamics", {}).get("weight_cap", 5.0)
+#     node.authority_weight = min(weight_cap, node.authority_weight + 0.05)
+#   This config then controls W via dynamics.weight_cap.
+#
+# Multi-seed protocol:
+#   Seed 42  — primary
+#   Seed 123 — replicate
+#   Seed 7   — replicate
+#   (Same seeds as all prior batches for comparability.)
+#
+# Baseline: no new null run needed.
+#   Null runs (authority off) produce Gini = 0.0 regardless of weight_cap.
+#   Use exp_004_null as shared baseline for all W-variation conditions.
+
+experiment:
+  id: exp_004a_W2_active
+  seed: 42                    # replace with 123 and 7 for multi-seed runs
+  description: >
+    Batch 04 Tier 1 — weight cap W = 2.0. Tests whether Gini_end tracks the
+    analytical formula Gini(N=100, k=2, W=2.0, w₀=1.0) = 49/2550 ≈ 0.019216.
+    Identical composition and topology to Batch 03. Only weight_cap changes.
+  ticks: 5000
+  record_interval: 50
+
+# --- Node groups ---
+# Identical to exp_003b (8% founding — the Batch 02 reference composition).
+# Composition is held constant across all Batch 04 W-variation experiments.
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+# --- Claim groups ---
+# Identical to Batch 02/03.
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+# --- Network ---
+# Identical to Batch 02/03. Topology is confirmed not to affect Gini (H7 rejected).
+
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+# --- Primitives: all enabled ---
+primitives:
+  boundary: true
+
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+
+  authority: true
+
+  mediation:
+    enabled: true
+    mode: structured
+
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+
+  reversibility: true
+
+  observation:
+    enabled: false
+
+# --- Trust network ---
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+# --- Dynamics ---
+dynamics:
+  revisability_rate: 0.005
+  min_ticks_before_archive: 100
+  stability_window_fraction: 0.025
+
+  weight_cap: 2.0
+  # NEW PARAMETER — requires engine change (see header).
+  # Controls the ceiling on authority_weight accumulation.
+  # Default (if omitted): 5.0 (backward compatible with all prior configs).
+
+events: []
+
+hypotheses:
+  - id: H11a_W2_gini_start
+    description: >
+      Gini_start = 99/10100 ≈ 0.009802 after tick 0.
+      One node wins all 100 claims (unknown→hyp) and reaches W=2.0 cap after 20 wins.
+      Distribution: [2.0 × 1, 1.0 × 99]. Derivation: G = 2·(4950+200)/(100·101)−101/100.
+    metric: authority_concentration_gini_start
+    predicted_value: 0.009802
+    predicted_exact: "99/10100"
+    window: [0, 0]
+
+  - id: H11a_W2_gini_end
+    description: >
+      Gini_end = 49/2550 ≈ 0.019216 at equilibrium.
+      Two dominant nodes (S* at W=2.0 for signal/perceptual group; C* at W=2.0 for
+      control/temporal group); 98 nodes remain at w₀=1.0.
+      This is the primary falsification condition for H11 at W=2.0.
+    metric: authority_concentration_gini
+    predicted_value: 0.019216
+    predicted_exact: "49/2550"
+    window: [3000, 5000]
+    note: >
+      If Gini_end ≠ 49/2550 at this precision, the fixed-point formula in LN-003 is wrong.
+      If Gini_end = 49/2550, H11 is confirmed at W=2.0. Combined with W=3.0 and W=4.0
+      results, this constitutes a three-point validation of the formula.

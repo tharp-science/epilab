@@ -1,0 +1,177 @@
+# Exp-002 — Large-Network Authority Gravity: Scale-Matched Null Baseline
+#
+# Purpose: establish the authority-weight distribution baseline at 100-node scale
+# with all primitives disabled. This run is mandatory before exp_002_active.yaml.
+# Gini at equilibrium here is the reference point against which the active run's
+# Gini delta is interpreted. Absolute Gini values are NOT comparable between
+# 7-node and 100-node experiments.
+#
+# Run this config at all three seeds before running any active variant.
+# Seeds: 42 (primary), 123, 7
+#
+# B2-COMPLIANT: claim set is 35/100 true (majority false), tiered difficulty
+# (0.2 / 0.5 / 0.8). epistemic_accuracy is a valid secondary metric here,
+# though not the primary hypothesis metric for this experiment.
+#
+# Engine requirements before running:
+#   [A1] Verdict comparison logic must be patched (directional/threshold conditions)
+#   [A2] stability_window_fraction must be implemented as a config parameter
+#   [B1] revisability_rate must be implemented in the tick loop
+#       (not needed for null — all primitives off — but verify it doesn't error)
+
+experiment:
+  id: exp_002_null
+  seed: 42                    # replace with 123 and 7 for multi-seed runs
+  description: >
+    Scale-matched null baseline for Exp-002 authority gravity test.
+    100 nodes, 100 claims, small-world topology. All primitives disabled.
+    Establishes the Gini baseline and ESI floor at this network scale.
+    Without this run, the active experiment's Gini readings are uninterpretable.
+  ticks: 5000
+  record_interval: 50
+
+# --- Node groups ---
+# Engine should expand node_groups into individually-identified nodes using
+# id_prefix + zero-padded index (e.g. fn_01 … fn_08).
+# Total: 100 nodes.
+
+node_groups:
+  - persona: founding_node        # all authority types, high weight, compounding
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node      # signal only, low weight, no compounding
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node       # control only, mid weight
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer       # signal + perceptual, high threshold
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover           # signal + temporal, low threshold, fast compounding
+    count: 8
+    id_prefix: "fm_"
+
+# --- Claim groups ---
+# Engine expands claim_groups into individually-identified claims.
+# Stratified difficulty and majority-false ground truth for meaningful
+# accuracy tracking if epistemic_accuracy is inspected.
+# Total: 100 claims.
+#
+# Difficulty tiers:
+#   easy   (0.2): fast resolution, low confidence barrier
+#   medium (0.5): baseline (consistent with prior batch)
+#   hard   (0.8): slow resolution, high confidence barrier
+#
+# Ground truth: 35 true, 65 false (majority false so accuracy
+# tracks governance quality, not base rate).
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+# --- Network ---
+network:
+  topology: small_world
+  k: 6            # mean degree for 100-node network; higher than k=4 at 7 nodes
+                  # to maintain small-world connectivity at scale
+  p: 0.1          # rewiring probability; consistent with prior batch
+
+# --- Primitives: all disabled ---
+primitives:
+  boundary: false
+  lineage:
+    enabled: false
+    retention_probability: 0.0
+  authority: false
+  mediation:
+    enabled: false
+    mode: none
+  confidence:
+    enabled: false
+    threshold_mean: 0.0
+    threshold_variance: 0.0
+  reversibility: false
+  observation:
+    enabled: false
+    accuracy_mean: 1.0
+    accuracy_variance: 0.0
+
+# --- Trust network ---
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+# --- Dynamics (new parameters — engine must support) ---
+dynamics:
+  revisability_rate: 0.0          # disabled for null; operationalised claims do not cycle
+  stability_window_fraction: 0.05 # 5% of ticks = 250 ticks for ESI stability window
+
+# --- No shock events ---
+events: []
+
+# --- Hypotheses ---
+hypotheses:
+  - id: H1
+    description: "Null run produces flat Gini at starting baseline (no primitive-driven concentration)"
+    metric: authority_concentration_gini
+    predicted_direction: flat
+    window: [0, 5000]
+
+  - id: H2
+    description: "Null run produces ESI near 0 (claims resolve chaotically without governance)"
+    metric: epistemic_stability_index
+    predicted_direction: flat
+    threshold_max: 0.2
+    window: [500, 5000]
+
+  - id: H3
+    description: "Null baseline Gini at equilibrium provides scale reference for active experiment"
+    metric: authority_concentration_gini
+    predicted_direction: flat
+    window: [2000, 5000]     # measure equilibrium in second half of run
+    note: "Record this value. The active experiment's Gini delta is interpreted against it."

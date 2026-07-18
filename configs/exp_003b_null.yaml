@@ -1,0 +1,133 @@
+# Exp-003b — Founding Proportion Variation: Null Baseline (8 founding / 100, CONTROL)
+#
+# This is the Batch 03 control condition. Composition is identical to Batch 02
+# (exp_002_null.yaml / exp_002_active.yaml). It serves as the reference point
+# against which the 4/100 and 16/100 conditions are compared.
+#
+# Founding proportion: 8 / 100 = 8%
+#
+# REUSE NOTE:
+#   exp_002_null.yaml seed 42 was run clean and its results are in the vault.
+#   You may reuse that run for seed 42 rather than re-running this config.
+#   Seeds 123 and 7 are still pending — run this config at those seeds.
+#
+# PREREQUISITE: run before exp_003b_active at all three seeds.
+#
+# Multi-seed protocol:
+#   Seed 42  — primary (may reuse exp_002_null seed 42 result)
+#   Seed 123 — run required
+#   Seed 7   — run required
+
+experiment:
+  id: exp_003b_null
+  seed: 42                    # replace with 123 and 7; seed 42 may reuse exp_002_null
+  description: >
+    Batch 03 Tier 1 control null baseline. 100 nodes, 8 founding / 92 other,
+    k=6 small-world, all primitives disabled. Composition identical to Batch 02.
+    Establishes reference Gini delta for 8% founding proportion condition.
+  ticks: 5000
+  record_interval: 50
+
+# --- Node groups ---
+# Identical to exp_002_null / exp_002_active (Batch 02 control).
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+# --- Claim groups ---
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+# --- Network ---
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+# --- Primitives: all disabled ---
+primitives:
+  boundary: false
+  lineage:
+    enabled: false
+  authority: false
+  mediation:
+    enabled: false
+  confidence:
+    enabled: false
+  reversibility: false
+  observation:
+    enabled: false
+
+# --- Trust network: static ---
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+# --- Dynamics: no cycling in null ---
+dynamics:
+  revisability_rate: 0
+  min_ticks_before_archive: 0
+  stability_window_fraction: 0.025
+
+events: []
+
+hypotheses: []

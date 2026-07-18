@@ -1,0 +1,250 @@
+# Exp-002 — Large-Network Authority Gravity: Active Run
+#
+# Primary question:
+#   Does authority gravity compound continuously at 100-node scale, or does it
+#   saturate as it did at 7-node scale (Gini ~0.175)?
+#
+# This tests H7 (unresolved-tensions.md): authority gravity may require a minimum
+# network size and interaction density to exhibit unbounded compounding. The 7-node
+# experiments showed saturation; this experiment tests whether that saturation is
+# topology-dependent (property of small networks) or primitive-dependent (property
+# of the mechanism itself).
+#
+# PREREQUISITE: run exp_002_null.yaml at all three seeds first.
+# The Gini delta (this run minus null baseline) is the interpretable signal.
+# Do not compare absolute Gini values to the 7-node batch.
+#
+# Multi-seed protocol:
+#   Seed 42  — primary (consistent with prior batch)
+#   Seed 123 — replicate
+#   Seed 7   — replicate
+#   Vary only the seed field. All other parameters must be identical across seeds.
+#   If Gini range across seeds > 0.05 at equilibrium, variance is too high for
+#   structural claims — expand to 5 seeds before recording vault-level findings.
+#
+# Engine requirements before running:
+#   [A1] Verdict comparison logic must be patched
+#   [A2] stability_window_fraction must be implemented
+#   [B1] revisability_rate must be implemented and tested
+#   Null baseline (exp_002_null.yaml) must have completed at all three seeds.
+
+experiment:
+  id: exp_002_active
+  seed: 42                    # replace with 123 and 7 for multi-seed runs
+  description: >
+    Large-network authority gravity test. 100 nodes, 100 claims, small-world
+    topology, full primitive set, static trust, claim cycling enabled.
+    Tests whether authority gravity compounds continuously at 100-node scale
+    or saturates as in the 7-node batch. Primary metric: Gini delta from
+    scale-matched null baseline. Secondary: ESI stability, resolution rate.
+  ticks: 5000
+  record_interval: 50
+
+# --- Node groups ---
+# Identical distribution to exp_002_null. Do not alter.
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+# --- Claim groups ---
+# Identical to exp_002_null. Do not alter.
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+# --- Network ---
+# Identical to null. Do not alter topology between null and active.
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+# --- Primitives: all enabled at full strength ---
+primitives:
+  boundary: true
+
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+
+  authority: true
+
+  mediation:
+    enabled: true
+    mode: structured
+
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1    # slight heterogeneity; reflects realistic variation
+                                # across 100 agents vs. 0.0 in 7-node batch
+
+  reversibility: true
+
+  observation:
+    enabled: false             # held off; not the variable under test
+
+# --- Trust network: static ---
+# Dynamic trust is explicitly disabled to isolate authority gravity from
+# trust amplification. Dynamic trust is the variable for a subsequent run
+# (exp_002b) once a clean static-trust baseline is established here.
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+# --- Dynamics ---
+dynamics:
+  revisability_rate: 0.02
+  # Per-tick probability that each operationalised claim decays to revisable,
+  # re-entering the state machine as contested.
+  # B3 calibration (2026-03-14): original rate 0.005 produced only 908 total
+  # transitions over 5000 ticks (< 10 per claim) — absorbing-state artefact.
+  # Target: cycling events per tick ≈ contested_claim_resolution_rate (~0.04).
+  # With ~100 operationalised claims: revisability_rate ≈ 0.04/100 = 0.0004
+  # per claim, but governance friction (confidence, mediation, authority) slows
+  # re-resolution, so 4× uplift to 0.02 is recommended. At full operationalisation:
+  # ~2 claims cycle per tick, matching resolution throughput.
+  #
+  # B5 co-design constraint: stability_window_fraction ≤ 0.5/(ticks×rate)
+  #   = 0.5 / (5000 × 0.02) = 0.005  →  N_ticks = 25, cycle_period = 50. ✓
+
+  stability_window_fraction: 0.005
+  # A claim must be operationalised for 0.5% of total ticks (= 25 ticks)
+  # without governance reversion to count toward ESI.
+  # B5 constraint satisfied: N_ticks(25) < cycle_period(50).
+  # Reduced from 0.05 (250 ticks) which violated B5 and suppressed ESI to 0.
+
+  min_ticks_before_archive: 100
+  # B3 fix: nodes cannot propose operationalised→archived until a claim has dwelled
+  # in operationalised for at least 100 ticks. Without this, 100 nodes simultaneously
+  # archive claims in ~1 tick, leaving no claims in OPERATIONALISED for cycling to act on.
+  # Expected cycling events per claim per dwell window: 100 ticks × 0.02 rate = ~2.
+  # Verification target: total_state_transitions > total_claims × 10 (b3_absorbing_state_artefact=false).
+
+# --- No shock events ---
+# Shocks are reserved for subsequent experiments. Clean run here.
+events: []
+
+# --- Hypotheses ---
+#
+# The primary question is H2 (does Gini exceed the 7-node equilibrium?).
+# H1 and H3 are diagnostic. H4 is the scale-sensitivity finding either way.
+
+hypotheses:
+  - id: H1
+    description: "Authority gravity emerges at 100-node scale: Gini rises from null baseline"
+    metric: authority_concentration_gini
+    predicted_direction: increasing
+    window: [0, 2000]
+    note: >
+      Predicted to rise as in 7-node batch. If flat, the mechanism does not
+      generalise to this network size — a significant negative finding.
+
+  - id: H2
+    description: >
+      Authority gravity exceeds 7-node equilibrium: Gini delta (active minus null)
+      is greater than 0.175 at equilibrium — the saturation ceiling from the
+      prior batch. Tests whether larger interaction surface unlocks compounding.
+    metric: authority_concentration_gini_delta_from_null
+    predicted_direction: increasing
+    threshold_min: 0.175
+    window: [3000, 5000]      # equilibrium window: final 40% of run
+    note: >
+      This is the hypothesis that distinguishes topology-bounded saturation
+      from topology-independent compounding. If delta > 0.175: compounding
+      is topology-sensitive and unlocks at scale. If delta ≈ 0.175: saturation
+      is intrinsic to the mechanism regardless of network size.
+
+  - id: H3
+    description: >
+      Authority gravity does not reach equilibrium by tick 5000: Gini is still
+      rising in the final 1000 ticks. Tests whether compounding is unbounded
+      at this scale or saturates at a higher ceiling.
+    metric: authority_concentration_gini
+    predicted_direction: increasing
+    window: [4000, 5000]
+    note: >
+      If Gini is flat in this window, gravity saturates (higher ceiling than
+      7-node but still bounded). If still rising, gravity may be unbounded
+      at 100-node scale — consistent with the vault's original claim.
+
+  - id: H4
+    description: "ESI remains high (≥ 0.8) throughout: full governance is stable at scale"
+    metric: epistemic_stability_index
+    predicted_direction: flat
+    threshold_min: 0.8
+    window: [500, 5000]
+    note: >
+      If ESI degrades below 0.8 in a high-Gini regime, authority concentration
+      eventually undermines the epistemic stability it initially produced.
+      This would be a new finding not observed in the 7-node batch.
+
+  - id: H5
+    description: "Claim cycling sustains live system: transitions continue past tick 1000"
+    metric: state_transition_count
+    predicted_direction: increasing
+    window: [1000, 5000]
+    note: >
+      Diagnostic for the revisability_rate mechanism. If transition count
+      plateaus after tick 1000, the cycling rate is too low and the system
+      has entered a slow-motion absorbing state. Increase revisability_rate
+      and rerun.

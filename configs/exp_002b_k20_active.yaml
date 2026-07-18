@@ -1,0 +1,184 @@
+# Exp-002b — k=20 Active Run
+#
+# Part of the k-variation batch testing the interaction-density hypothesis (H7):
+# authority gravity magnitude scales with k/N, not N alone.
+#
+# Identical to exp_002b_k12_active.yaml in every parameter except k.
+# k=6 active (Exp-002, seed 42 B1/B3-fixed) produced Gini delta = 0.073.
+# k=12 active produced Gini delta = TBD from batch.
+# This run tests whether further increasing interaction density (k/N: 0.12 → 0.20)
+# produces a further increase in Gini delta.
+#
+# PREREQUISITE: exp_002b_k20_null.yaml must be run at all three seeds first.
+# Seeds: 42 (primary), 123, 7
+#
+# Engine requirements:
+#   [B1] Cycling at Step 0 (pre-governance) — must not be moved
+#   [B3] revisability_rate: 0.005 confirmed correct — do not change
+#   [B5] stability_window_fraction: 0.025 satisfies co-design constraint
+#        N = 125 ticks < cycle period 200 ticks — constraint satisfied
+
+experiment:
+  id: exp_002b_k20_active
+  seed: 42                    # replace with 123 and 7 for multi-seed runs
+  description: >
+    k=20 active run for interaction-density hypothesis test.
+    100 nodes, 100 claims, small-world k=20, full primitive set, static trust.
+    k/N = 0.20. If H7 holds, Gini delta (active minus null) should exceed
+    both the k=6 result (0.073) and the k=12 result. Primary metric: Gini delta
+    from matched null. Compare across k=[6,12,20] to assess scaling relationship.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 20           # CHANGED from k=12 — the only structural difference from exp_002b_k12_active
+  p: 0.1
+
+primitives:
+  boundary: true
+
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+
+  authority: true
+
+  mediation:
+    enabled: true
+    mode: structured
+
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+
+  reversibility: true
+
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0.005
+  # Confirmed correct at 100-node scale. Do not adjust.
+
+  min_ticks_before_archive: 100
+  # Required: prevents immediate archiving that blocked cycling in pre-B1 runs.
+  # Cycling must remain at Step 0 in the engine tick loop.
+
+  stability_window_fraction: 0.025
+  # N = 125 ticks. B5 constraint satisfied: 125 < 1/0.005 = 200.
+  # Do not increase above 0.039 (N=195).
+
+events: []
+
+hypotheses:
+  - id: H1
+    description: >
+      Gini delta (active minus null, k=20) exceeds both the k=6 result (0.073)
+      and the k=12 result. If H7 holds, increasing interaction density further
+      should produce stronger authority concentration.
+    metric: authority_concentration_gini
+    predicted_direction: increasing
+    window: [3000, 5000]
+    note: >
+      Manual computation required: delta = active_gini − null_gini at same k.
+      Compare to Exp-002 delta (k=6) and Exp-002b k=12 delta. Direction is the
+      test, not magnitude.
+
+  - id: H2
+    description: >
+      Gini trajectory is still rising in the final 1000 ticks, consistent with
+      authority gravity not yet saturating at k=20.
+    metric: authority_concentration_gini
+    predicted_direction: increasing
+    window: [4000, 5000]
+
+  - id: H3
+    description: >
+      ESI and drift rate are within the same order of magnitude as k=6 and k=12
+      active runs. k variation should not systematically change epistemic
+      contention if the interaction-density hypothesis is specifically about
+      structural gravity, not epistemic dynamics.
+    metric: interpretive_drift_rate
+    predicted_direction: flat
+    window: [1000, 5000]
+    note: >
+      Not a strong prediction — treat as exploratory.
+
+  - id: H4
+    description: "Cycling sustains live system: b3_absorbing_state_artefact remains false"
+    metric: b3_absorbing_state_artefact
+    predicted_direction: flat
+    threshold_max: 0
+    window: [0, 5000]
+    note: "Diagnostic check. If true, run is invalid — do not record as evidence."

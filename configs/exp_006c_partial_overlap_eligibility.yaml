@@ -1,0 +1,158 @@
+# Exp-006c — Partial-Overlap Eligibility Boundary Test
+#
+# Purpose:
+#   Test the boundary between split and merge regimes by creating explicit
+#   partial overlap in channel eligibility.
+#
+# Target structure:
+#   Channel A (forward-dominant): founding + fast_mover + peripheral
+#   Channel B (reversion):        peripheral + skeptical
+#
+# Mechanism setup:
+#   - Keep reversibility ON (both channels active)
+#   - Keep symmetric caps (W=5.0) to isolate eligibility from cap asymmetry
+#   - Make peripheral partially overlapping by granting temporal authority
+#     while retaining high reversibility tolerance.
+#
+# Branch expectations:
+#   - Merge branch: endpoint moves toward k=1 region (<= 0.05)
+#   - Split branch: endpoint remains k=2-like (>= 0.07)
+#   - If neither branch holds, this run identifies a boundary/intermediate regime.
+
+experiment:
+  id: exp_006c_partial_overlap_eligibility
+  seed: 2
+  description: >
+    Batch 06 boundary test. Both channels active with partial eligibility overlap:
+    peripheral nodes are eligible in both forward and reversion pathways.
+    Tests whether overlap alone is sufficient to collapse ownership to k=1.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+    # keep default low tolerance (0.15): not reversion-eligible
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+    authority_types: ["signal", "temporal"]
+    # retains default reversibility_tolerance 0.65 -> reversion-eligible
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+    # default signal+perceptual, tolerance 0.70 -> reversion-eligible
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+    # keep default low tolerance (0.10): not reversion-eligible
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+primitives:
+  boundary: true
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+  authority: true
+  mediation:
+    enabled: true
+    mode: structured
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+  reversibility: true
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0.005
+  min_ticks_before_archive: 100
+  stability_window_fraction: 0.025
+  weight_cap: 5.0
+
+events: []
+
+hypotheses:
+  - id: H15a_partial_overlap_merge
+    description: >
+      If overlap causes channel ownership collapse, endpoint should move to
+      k=1-like region.
+    metric: authority_concentration_gini
+    predicted_direction: "<= 0.05"
+    window: [3000, 5000]
+
+  - id: H15b_partial_overlap_split
+    description: >
+      If split remains robust under partial overlap, endpoint should stay in
+      k=2-like region.
+    metric: authority_concentration_gini
+    predicted_direction: ">= 0.07"
+    window: [3000, 5000]
+
+  - id: H15c_reversion_channel_active
+    description: >
+      Reversion channel remains active in the partial-overlap regime.
+    metric: total_reversions
+    predicted_direction: "> 0"
+    window: [0, 5000]

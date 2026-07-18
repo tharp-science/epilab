@@ -1,0 +1,158 @@
+# Exp-003b — Founding Proportion Variation: Active Run (8 founding / 100, CONTROL)
+#
+# This is the Batch 03 control condition. Replicates Batch 02 composition
+# (exp_002_active.yaml) at all three seeds to provide the reference Gini delta.
+#
+# Founding proportion: 8 / 100 = 8%
+# Expected Gini delta at equilibrium: ≈ 0.073 (Batch 02 fixed point)
+#
+# REUSE NOTE:
+#   exp_002_active.yaml seed 42 (B3-fixed run) is already in the vault with
+#   Gini delta confirmed. You may reuse that result for seed 42.
+#   Seeds 123 and 7 are pending — run this config at those seeds.
+#   If seeds 123 and 7 results differ from 0.073 by > 0.05, treat as anomaly.
+#
+# PREREQUISITE: exp_003b_null must complete at matching seed before this run.
+#
+# Multi-seed protocol:
+#   Seed 42  — primary (may reuse exp_002_active B3-fixed result)
+#   Seed 123 — run required
+#   Seed 7   — run required
+
+experiment:
+  id: exp_003b_active
+  seed: 42                    # replace with 123 and 7; seed 42 may reuse exp_002_active
+  description: >
+    Batch 03 Tier 1 control. 100 nodes, 8 founding / 92 other, k=6 small-world,
+    full primitive set. Composition identical to Batch 02 (exp_002_active).
+    Expected Gini delta ≈ 0.073. Validates Batch 03 apparatus against known result
+    before interpreting the 4/100 and 16/100 conditions.
+  ticks: 5000
+  record_interval: 50
+
+# --- Node groups ---
+# Identical to exp_002_active (Batch 02 control). Do not alter.
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+# --- Claim groups ---
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+# --- Network ---
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+# --- Primitives: all enabled at full strength ---
+primitives:
+  boundary: true
+
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+
+  authority: true
+
+  mediation:
+    enabled: true
+    mode: structured
+
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+
+  reversibility: true
+
+  observation:
+    enabled: false
+
+# --- Trust network: static ---
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+# --- Dynamics ---
+dynamics:
+  revisability_rate: 0.005
+  min_ticks_before_archive: 100
+  stability_window_fraction: 0.025
+  # B5 constraint: N=125 < cycle period 200. Satisfied.
+
+events: []
+
+hypotheses:
+  - id: H10_control
+    description: >
+      Control replication: Gini delta ≈ 0.073 at equilibrium.
+      Confirms Batch 03 apparatus reproduces the Batch 02 fixed point
+      before interpreting the 4/100 and 16/100 conditions.
+    metric: authority_concentration_gini_delta_from_null
+    predicted_direction: "≈ 0.073"
+    window: [3000, 5000]
+    note: >
+      If this control run does not reproduce ≈ 0.073, do not proceed with
+      interpreting exp_003a or exp_003c results. Investigate apparatus first.
+      Tolerance: ±0.01 acceptable given seed variation.

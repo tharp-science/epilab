@@ -1,0 +1,193 @@
+# Exp-003c — Founding Proportion Variation: Active Run (16 founding / 100)
+#
+# Primary question (Batch 03 Tier 1):
+#   Does increasing founding proportion to 16% raise the authority equilibrium
+#   above the Batch 02 fixed point (Gini delta ≈ 0.073)?
+#
+# Founding proportion: 16 / 100 = 16%
+#   Peripheral nodes reduced by 8 to hold total at 100.
+#   All other node types held constant to isolate the founding variable.
+#
+# Falsification condition (from temporal-position.md postscript):
+#   If Gini delta > 0.073:   temporal position hypothesis supported (higher founding → higher equilibrium)
+#   If Gini delta ≈ 0.073:   founding proportion is NOT the governing variable — H10 requires revision
+#   If Gini delta < 0.073:   anomalous — investigate before recording as vault evidence
+#
+# PREREQUISITE: exp_003c_null must complete at matching seed before this run.
+# Do not compare absolute Gini to Batch 02 — null baseline differs by composition.
+#
+# Multi-seed protocol:
+#   Seed 42  — primary
+#   Seed 123 — replicate
+#   Seed 7   — replicate
+#   If Gini range across seeds > 0.05, expand to 5 seeds before vault-level claim.
+#
+# Engine requirements (all resolved — see engine-audit.md):
+#   [A1] Verdict comparison logic: Fixed
+#   [A2] stability_window_fraction: implemented and configured below
+#   [A5] Event log write mode: Fixed
+#   [B1] Absorbing state / cycling: Fixed (Step 0 + min_ticks_before_archive)
+#   [B3] revisability_rate calibration: Fixed (0.005 confirmed correct)
+#   [B4] Cycling/reversion split: Fixed
+#   [B5] stability_window_fraction co-design: Satisfied (N=125 < cycle period 200)
+
+experiment:
+  id: exp_003c_active
+  seed: 42                    # replace with 123 and 7 for multi-seed runs
+  description: >
+    Batch 03 Tier 1 — founding proportion increased to 16/100 (16%).
+    100 nodes, k=6 small-world, full primitive set, claim cycling enabled.
+    Tests whether authority equilibrium scales upward with founding proportion.
+    Primary metric: Gini delta from exp_003c_null at matching seed.
+    Prediction: Gini delta > 0.073 (Batch 02 fixed point).
+  ticks: 5000
+  record_interval: 50
+
+# --- Node groups ---
+# Founding count: 16 (doubled from 8)
+# Peripheral count: 44 (reduced by 8 to compensate)
+# Mediating, skeptical, fast_mover: identical to Batch 02.
+# IMPORTANT: must match exp_003c_null exactly.
+
+node_groups:
+  - persona: founding_node
+    count: 16
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 44
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+# --- Claim groups ---
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+# --- Network ---
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+# --- Primitives: all enabled at full strength ---
+primitives:
+  boundary: true
+
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+
+  authority: true
+
+  mediation:
+    enabled: true
+    mode: structured
+
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.1
+
+  reversibility: true
+
+  observation:
+    enabled: false
+
+# --- Trust network: static ---
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+# --- Dynamics ---
+dynamics:
+  revisability_rate: 0.005
+  # Confirmed correct at 100-node scale (B3-fixed run: 2,498 cycling events).
+
+  min_ticks_before_archive: 100
+  # Required for B1 fix. Do not reduce.
+
+  stability_window_fraction: 0.025
+  # N = 5000 × 0.025 = 125 ticks.
+  # B5 constraint: 125 < 1/0.005 = 200. Satisfied with margin.
+
+events: []
+
+hypotheses:
+  - id: H10c
+    description: >
+      Founding proportion increase raises authority equilibrium:
+      Gini delta (active − null) is greater than 0.073 at equilibrium.
+      Tests whether temporal position (founding proportion) governs the fixed point.
+    metric: authority_concentration_gini_delta_from_null
+    predicted_direction: "> 0.073"
+    window: [3000, 5000]
+    note: >
+      Batch 02 fixed point: Gini delta = 0.07259 (identical across k=6/12/20, seeds 42/123/7).
+      If this run produces a higher delta, combined with exp_003a producing a lower delta,
+      founding proportion is confirmed as the governing variable — H10 supported.
+      If delta ≈ 0.073 regardless of founding count, the fixed point is insensitive to
+      composition — H10 requires fundamental revision.
+
+  - id: H10d
+    description: >
+      System remains alive: total state transitions exceed 10× claim count.
+      Confirms cycling mechanism is active at increased founding proportion.
+    metric: total_state_transitions
+    predicted_direction: "> 1000"
+    window: [0, 5000]
+    note: >
+      Diagnostic only. If transitions < 1000, absorbing state has returned —
+      do not record epistemic metrics. Increased founding nodes may accelerate
+      governance convergence; watch for early saturation.

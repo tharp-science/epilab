@@ -1,0 +1,88 @@
+# Grid-07 execution batching manifest
+# planning artifact: no runs executed by this file
+
+execution:
+  batch_id: exp_007_grid07_execution
+  source_manifest: configs/exp_007_grid07_manifest.yaml
+  total_runs: 70
+  policy:
+    autonomous_between_checkpoints: true
+    halt_only_at: [C0, C1, C2, C4]
+
+points:
+  all: [G0, G1, G2, G3, G4, G5, G6]
+  flanks: [G0, G1, G6]
+  core: [G2, G3, G4, G5]
+
+seeds:
+  pilot: [2, 8, 16]
+  remainder: [23, 42, 57, 73, 91, 123, 211]
+
+batches:
+  - id: B0
+    type: preflight
+    runs: 0
+    points: [G0, G1, G2, G3, G4, G5, G6]
+    checkin: C0
+    halt_conditions:
+      - signature_mismatch
+      - scaffold_drift
+
+  - id: B1
+    type: pilot_full_grid
+    runs: 21
+    points: [G0, G1, G2, G3, G4, G5, G6]
+    seeds: [2, 8, 16]
+    checkin: C1
+    halt_conditions:
+      - run_failure
+      - missing_required_scorecard_metrics
+      - off_manifold_rate_gt_0_20
+
+  - id: B2
+    type: flank_completion
+    runs: 21
+    points: [G0, G1, G6]
+    seeds: [23, 42, 57, 73, 91, 123, 211]
+    checkin: C2
+    halt_conditions:
+      - both_tails_mixed_basin
+      - flank_non_monotonic_reversal_flag
+
+  - id: B3
+    type: transition_core_completion
+    runs: 28
+    points: [G2, G3, G4, G5]
+    seeds: [23, 42, 57, 73, 91, 123, 211]
+    checkin: C3_optional
+    halt_conditions:
+      - systemic_run_failure_only
+
+  - id: B4
+    type: aggregation_decision
+    runs: 0
+    checkin: C4
+    required_outputs:
+      - basin_probabilities_per_point
+      - specialization_stats_per_point
+      - early_capture_stats_per_point
+      - majority_favored_merge_point
+      - mixed_basin_region_width
+      - non_monotonic_reversal_flags
+
+checkpoints:
+  - id: C0
+    required: true
+    purpose: preflight_integrity
+  - id: C1
+    required: true
+    purpose: pilot_quality_gate
+  - id: C2
+    required: true
+    purpose: flank_decision_gate
+  - id: C3_optional
+    required: false
+    purpose: failure_only_interrupt
+  - id: C4
+    required: true
+    purpose: final_interpretation_gate

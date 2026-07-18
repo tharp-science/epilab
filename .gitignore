@@ -1,0 +1,46 @@
+# Raw experiment outputs
+outbox/
+archive/
+
+# Private thinking vault (kept separate/private)
+systems-vault/
+
+# Large/generated artifacts
+*.jsonl
+*.tgz
+.preflight-files.txt
+.preflight-sha256.txt
+
+# local/system noise
+.DS_Store
+._*
+.venv/
+.env
+.env.local
+.env.*.local
+.lab-*.json
+.claude/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+dist/
+build/
+logs/
+*.log
+
+# nested app/service environments
+apps/*/node_modules/
+apps/*/dist/
+services/*/.venv/
+services/*/__pycache__/
+services/*/app/__pycache__/
+
+# private or generated
+outbox/
+archive/
+systems-vault/
+AGENTS.md
+CLAUDE.md
+analysis/
+inbox/

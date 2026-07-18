@@ -1,0 +1,137 @@
+# Exp-002b — k=12 Null Baseline
+#
+# Part of the k-variation batch testing the interaction-density hypothesis (H7):
+# authority gravity magnitude scales with k/N, not N alone.
+#
+# This config is identical to exp_002_null.yaml in every parameter except k.
+# k=6 null was run as Exp-002 and serves as the k=6 anchor.
+# This run establishes the Gini null baseline at k=12 for the same network size.
+#
+# PREREQUISITE: run before exp_002b_k12_active.yaml at all three seeds.
+# Seeds: 42 (primary), 123, 7
+# Do not compare absolute Gini values to exp_002_null. Use Gini delta
+# (active minus matched null at same k) as the interpretable metric.
+
+experiment:
+  id: exp_002b_k12_null
+  seed: 42                    # replace with 123 and 7 for multi-seed runs
+  description: >
+    Scale-matched null baseline for k=12 authority gravity test.
+    100 nodes, 100 claims, small-world k=12. All primitives disabled.
+    Establishes the Gini null baseline at higher interaction density.
+    k/N = 12/100 = 0.12 — twice the density of the k=6 baseline.
+  ticks: 5000
+  record_interval: 50
+
+node_groups:
+  - persona: founding_node
+    count: 8
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 52
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+network:
+  topology: small_world
+  k: 12           # CHANGED from k=6 — the only structural difference from exp_002_null
+  p: 0.1
+
+primitives:
+  boundary: false
+  lineage:
+    enabled: false
+    retention_probability: 0.0
+  authority: false
+  mediation:
+    enabled: false
+    mode: none
+  confidence:
+    enabled: false
+    threshold_mean: 0.0
+    threshold_variance: 0.0
+  reversibility: false
+  observation:
+    enabled: false
+    accuracy_mean: 1.0
+    accuracy_variance: 0.0
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+dynamics:
+  revisability_rate: 0.0
+  stability_window_fraction: 0.025
+
+events: []
+
+hypotheses:
+  - id: H1
+    description: "Null run produces flat Gini — no primitive-driven concentration at k=12"
+    metric: authority_concentration_gini
+    predicted_direction: flat
+    window: [0, 5000]
+
+  - id: H2
+    description: "Null Gini at equilibrium provides k=12 reference for active Gini delta"
+    metric: authority_concentration_gini
+    predicted_direction: flat
+    window: [2000, 5000]
+    note: "Record equilibrium value. Active Gini delta = active[k=12] − null[k=12]."

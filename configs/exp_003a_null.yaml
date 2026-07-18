@@ -1,0 +1,139 @@
+# Exp-003a — Founding Proportion Variation: Null Baseline (4 founding / 100)
+#
+# Primary question (Batch 03 Tier 1):
+#   Does authority equilibrium scale with founding-node proportion?
+#   This is the null baseline for exp_003a_active — primitives disabled,
+#   composition varied. The Gini delta (active minus null) is the signal.
+#
+# Founding proportion: 4 / 100 = 4%
+#   Peripheral nodes increased by 4 to hold total at 100.
+#   All other node types held constant to isolate the founding variable.
+#
+# PREREQUISITE: run before exp_003a_active at all three seeds.
+# Do not compare absolute Gini to exp_002_null — composition differs.
+# Compare Gini delta (active − null) across compositions.
+#
+# Multi-seed protocol:
+#   Seed 42  — primary
+#   Seed 123 — replicate
+#   Seed 7   — replicate
+
+experiment:
+  id: exp_003a_null
+  seed: 42                    # replace with 123 and 7 for multi-seed runs
+  description: >
+    Batch 03 Tier 1 null baseline. 100 nodes, 4 founding / 96 peripheral+other,
+    k=6 small-world, all primitives disabled. Establishes scale-matched null Gini
+    for the reduced founding proportion condition. Paired with exp_003a_active.
+  ticks: 5000
+  record_interval: 50
+
+# --- Node groups ---
+# Founding count: 4 (down from 8 in Batch 02 control)
+# Peripheral count: 56 (up from 52 — absorbs the 4 removed founding nodes)
+# Mediating, skeptical, fast_mover: unchanged — not the variable under test.
+
+node_groups:
+  - persona: founding_node
+    count: 4
+    id_prefix: "fn_"
+
+  - persona: peripheral_node
+    count: 56
+    id_prefix: "pn_"
+
+  - persona: mediating_node
+    count: 20
+    id_prefix: "mn_"
+
+  - persona: skeptical_peer
+    count: 12
+    id_prefix: "sp_"
+
+  - persona: fast_mover
+    count: 8
+    id_prefix: "fm_"
+
+# --- Claim groups ---
+# Identical to Batch 02 (exp_002) claim design — B2-compliant.
+# Do not alter between null and active, or across compositions.
+
+claim_groups:
+  - id_prefix: "cl_easy_true_"
+    count: 12
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_easy_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.2
+    ambiguity: 0.2
+
+  - id_prefix: "cl_med_true_"
+    count: 14
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_med_false_"
+    count: 20
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+
+  - id_prefix: "cl_hard_true_"
+    count: 9
+    initial_state: unknown
+    ground_truth: true
+    difficulty: 0.8
+    ambiguity: 0.7
+
+  - id_prefix: "cl_hard_false_"
+    count: 25
+    initial_state: unknown
+    ground_truth: false
+    difficulty: 0.8
+    ambiguity: 0.7
+
+# --- Network ---
+# Identical to exp_002 — topology is not the variable under test.
+network:
+  topology: small_world
+  k: 6
+  p: 0.1
+
+# --- Primitives: all disabled ---
+primitives:
+  boundary: false
+  lineage:
+    enabled: false
+  authority: false
+  mediation:
+    enabled: false
+  confidence:
+    enabled: false
+  reversibility: false
+  observation:
+    enabled: false
+
+# --- Trust network: static ---
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+# --- Dynamics: no cycling in null ---
+dynamics:
+  revisability_rate: 0
+  min_ticks_before_archive: 0
+  stability_window_fraction: 0.025
+
+events: []
+
+hypotheses: []

@@ -1,0 +1,158 @@
+# B2-WARNING: epistemic_accuracy is NOT a valid primary metric for this experiment.
+# Claim set is 7/10 true (majority true, uniform difficulty 0.5).
+# Accuracy converges to base rate (~0.7) regardless of governance.
+# H1 (accuracy increasing above 0.6 by t=2000) is untestable here. See fault B2.
+
+experiment:
+  id: exp_001c_extended_ticks
+  seed: 42
+  description: >
+    Extended-tick rerun of Exp-001 full-governance baseline. Identical in all parameters
+    except ticks: 2000 vs. 500. Tests whether epistemic_accuracy, which was identical
+    between Exp-000 (null, 0.6) and Exp-001 (full governance, 0.6) at 500 ticks, diverges
+    over longer timescales. The non-divergence is either a timescale effect (full governance
+    needs more than 500 ticks to improve accuracy above chance) or a metric pathology
+    (accuracy is not responding to governance primitives). This experiment distinguishes
+    the two. Baseline is Exp-001 (seed 42, 500 ticks, small_world, all primitives enabled).
+  ticks: 2000
+  record_interval: 10
+
+nodes:
+  - id: founding_node
+    persona: founding_node
+  - id: peripheral_node_1
+    persona: peripheral_node
+  - id: peripheral_node_2
+    persona: peripheral_node
+  - id: peripheral_node_3
+    persona: peripheral_node
+  - id: peripheral_node_4
+    persona: peripheral_node
+  - id: mediating_node_1
+    persona: mediating_node
+  - id: mediating_node_2
+    persona: mediating_node
+
+claims:
+  - id: claim_001
+    initial_state: hypothesised
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_002
+    initial_state: hypothesised
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_003
+    initial_state: hypothesised
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_004
+    initial_state: hypothesised
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_005
+    initial_state: hypothesised
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_006
+    initial_state: hypothesised
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_007
+    initial_state: hypothesised
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_008
+    initial_state: hypothesised
+    ground_truth: false
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_009
+    initial_state: hypothesised
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+  - id: claim_010
+    initial_state: hypothesised
+    ground_truth: true
+    difficulty: 0.5
+    ambiguity: 0.5
+
+network:
+  topology: small_world
+  k: 4
+  p: 0.1
+
+primitives:
+  boundary: true
+  lineage:
+    enabled: true
+    retention_probability: 1.0
+  authority: true
+  mediation:
+    enabled: true
+    mode: structured
+  confidence:
+    enabled: true
+    threshold_mean: 0.5
+    threshold_variance: 0.0
+  reversibility: true
+  observation:
+    enabled: false
+
+trust_network:
+  dynamic: false
+  update_rule: null
+  initial_weights: uniform
+
+events: []
+
+hypotheses:
+  - id: H1
+    description: >
+      epistemic_accuracy increases above 0.6 by tick 2000, diverging from the null baseline
+      (Exp-000, 0.6 at 500 ticks). If full governance is functioning correctly, accurate
+      claims should accumulate at operationalised state while inaccurate claims face more
+      reversions, producing accuracy above chance over sufficient time.
+    metric: epistemic_accuracy
+    predicted_direction: increasing
+    window: [500, 2000]
+    falsification_condition: >
+      epistemic_accuracy remains at or near 0.6 at tick 2000. This would indicate that
+      the accuracy metric is not responsive to the governance primitives regardless of
+      timescale — pointing to a metric pathology that must be resolved before accuracy
+      can be used as a hypothesis metric in downstream experiments.
+
+  - id: H2
+    description: >
+      authority_concentration_gini continues to increase beyond the Exp-001 value of 0.226,
+      consistent with authority gravity as a compounding mechanism that accumulates over time.
+      Predicted value at tick 2000: > 0.4.
+    metric: authority_concentration_gini
+    predicted_direction: increasing
+    window: [500, 2000]
+    falsification_condition: >
+      authority_concentration_gini plateaus at or below 0.226 (the 500-tick value), indicating
+      authority gravity saturates early and does not continue to compound — the mechanism may
+      have a natural ceiling rather than growing monotonically.
+
+  - id: H3
+    description: >
+      epistemic_stability_index remains at or near 1.0, confirming that full governance
+      sustains stability over extended runs rather than degrading through authority gravity
+      or other accumulation effects.
+    metric: epistemic_stability_index
+    predicted_direction: flat
+    window: [500, 2000]
+    falsification_condition: >
+      epistemic_stability_index degrades below 0.8 at any point after tick 500. This would
+      indicate that the governance structure is unstable over long timescales — possibly
+      because authority gravity undermines the distributed decision-making that produced
+      early stability.
