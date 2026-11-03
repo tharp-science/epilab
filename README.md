@@ -172,7 +172,7 @@ preprint is published on SSRN under its own terms.
 
 ## Related work
 
-[context-mediation-layer](https://github.com/sebb001/context-mediation-layer)
+[context-mediation-layer](https://github.com/tharp-science/context-mediation-layer)
 is the operational counterpart: where epilab tests governance primitives in
 simulation, the Context Mediation Layer implements a governed record surface
 for live human-AI coordination.
