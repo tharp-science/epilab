@@ -4,10 +4,17 @@ An agent-based simulation laboratory for stress-testing epistemic governance.
 
 ## At a glance
 
-This repository asks a falsifiable question: do governance primitives —
-boundary, lineage, authority, mediation, confidence, reversibility,
-observation — actually produce the structural effects predicted for them in
-multi-actor knowledge systems, or does order emerge (or fail) without them?
+This repository asks a falsifiable question: do six governance primitives —
+boundary, lineage, authority, mediation, confidence and reversibility —
+actually produce the structural effects predicted for them in multi-actor
+knowledge systems, or does order emerge (or fail) without them?
+
+Observation is implemented as an optional module and treated as a candidate
+seventh primitive, off by default. With it disabled, nodes have perfect
+visibility of the shared state. Every experiment config in `configs/` disables
+it, so the published results study the six primitives with observation held
+ideal. The [specification](simulation-spec.md) describes the proposed test of
+whether observation is an independent primitive or a performance parameter.
 
 It tests failure emergence, not success. The central question for every
 experiment is: under what conditions do systems break, and do the primitives
